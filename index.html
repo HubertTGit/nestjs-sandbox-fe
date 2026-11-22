@@ -1,9 +1,51 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <script>
+      ;(() => {
+        const storageKey = 'theme'
+        let stored = null
+        try {
+          stored = localStorage.getItem(storageKey)
+        } catch {}
+        const theme =
+          stored === 'light' || stored === 'dark' || stored === 'system'
+            ? stored
+            : 'dark'
+        const resolved =
+          theme === 'system'
+            ? window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light'
+            : theme
+        const root = document.documentElement
+        root.classList.remove('light', 'dark')
+        root.classList.add(resolved)
+        const colorSchemeMeta = document.querySelector(
+          'meta[name="color-scheme"]',
+        )
+        if (colorSchemeMeta) {
+          colorSchemeMeta.setAttribute(
+            'content',
+            theme === 'system' ? 'light dark' : theme,
+          )
+        }
+        const themeColorMeta = document.querySelector(
+          'meta[name="theme-color"]',
+        )
+        if (themeColorMeta) {
+          themeColorMeta.setAttribute(
+            'content',
+            resolved === 'dark' ? '#0a0a0a' : '#ffffff',
+          )
+        }
+      })()
+    </script>
     <title>nestjs-sandbox-fe</title>
   </head>
   <body>

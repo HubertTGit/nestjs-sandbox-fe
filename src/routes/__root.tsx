@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Layers } from 'lucide-react'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 export interface RouterContext {
   queryClient: QueryClient
@@ -30,21 +31,27 @@ function RootLayout() {
             <span>nestjs-sandbox-fe</span>
           </Link>
 
-          <nav aria-label="Primary" className="flex items-center gap-1 text-sm">
-            <Link
-              to="/"
-              activeOptions={{ exact: true }}
-              className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground [&.active]:bg-muted [&.active]:font-medium [&.active]:text-foreground"
+          <div className="flex items-center gap-2">
+            <nav
+              aria-label="Primary"
+              className="flex items-center gap-1 text-sm"
             >
-              Home
-            </Link>
-            <Link
-              to="/about"
-              className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground [&.active]:bg-muted [&.active]:font-medium [&.active]:text-foreground"
-            >
-              About
-            </Link>
-          </nav>
+              <Link
+                to="/"
+                activeOptions={{ exact: true }}
+                className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground [&.active]:bg-muted [&.active]:font-medium [&.active]:text-foreground"
+              >
+                Home
+              </Link>
+              <Link
+                to="/about"
+                className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground [&.active]:bg-muted [&.active]:font-medium [&.active]:text-foreground"
+              >
+                About
+              </Link>
+            </nav>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
