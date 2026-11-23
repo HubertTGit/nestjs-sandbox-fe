@@ -6,6 +6,11 @@ steps:
       - "-c"
       - |
         set -euo pipefail
+
+        # Ensure python3 is installed and available in the container
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -qy && apt-get install -yqy python3-minimal
+
         gcloud run services describe nestjs-sandbox-fe \
           --region=europe-west1 \
           --format=json | python3 -c '
