@@ -1,6 +1,6 @@
 steps:
   - id: "fetch-cloud-run-env"
-    name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk:latest"
     entrypoint: "bash"
     args:
       - "-c"
