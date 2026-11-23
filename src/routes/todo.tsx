@@ -1,12 +1,25 @@
 import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 import { RefreshCw } from 'lucide-react'
 import { useEffect } from 'react'
+import { authMeQueryOptions } from '@/api/auth'
 import { invalidateTodosCache, todosQueryOptions } from '@/api/todos'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/todo')({
+  beforeLoad: async ({ context: { queryClient }, location }) => {
+    const user = await queryClient.ensureQueryData(authMeQueryOptions)
+    if (!user) {
+      throw redirect({
+        to: '/',
+        search: {
+          redirect: location.href,
+        },
+      })
+    }
+    return { user }
+  },
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(todosQueryOptions),
   component: TodoPage,

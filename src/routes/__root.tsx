@@ -1,13 +1,16 @@
-import type { QueryClient } from '@tanstack/react-query'
+import { type QueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import {
   createRootRouteWithContext,
   Link,
   Outlet,
+  useRouter,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { Layers } from 'lucide-react'
+import { Layers, Lock, LogOut } from 'lucide-react'
+import { authMeQueryOptions, logout } from '@/api/auth'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { Button } from '@/components/ui/button'
 
 export interface RouterContext {
   queryClient: QueryClient
@@ -19,6 +22,16 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootLayout() {
+  const router = useRouter()
+  const { data: user } = useQuery(authMeQueryOptions)
+
+  const logoutMutation = useMutation({
+    mutationFn: logout,
+    onSettled: () => {
+      void router.invalidate()
+    },
+  })
+
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
@@ -45,11 +58,29 @@ function RootLayout() {
               </Link>
               <Link
                 to="/todo"
-                className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground [&.active]:bg-muted [&.active]:font-medium [&.active]:text-foreground"
+                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground [&.active]:bg-muted [&.active]:font-medium [&.active]:text-foreground"
               >
-                Todo
+                {!user ? (
+                  <Lock className="size-3.5" aria-hidden="true" />
+                ) : null}
+                <span>Todo</span>
               </Link>
             </nav>
+
+            {user ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={logoutMutation.isPending}
+                onClick={() => {
+                  logoutMutation.mutate()
+                }}
+              >
+                <LogOut />
+                <span>Sign out</span>
+              </Button>
+            ) : null}
+
             <ThemeToggle />
           </div>
         </div>
