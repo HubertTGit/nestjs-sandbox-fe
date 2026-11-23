@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 
 export const Route = createFileRoute('/todo')({
   beforeLoad: async ({ context: { queryClient }, location }) => {
-    const user = await queryClient.ensureQueryData(authMeQueryOptions)
+    const user = await queryClient.query(authMeQueryOptions)
     if (!user) {
       throw redirect({
         to: '/',
@@ -21,7 +21,7 @@ export const Route = createFileRoute('/todo')({
     return { user }
   },
   loader: ({ context: { queryClient } }) =>
-    queryClient.ensureQueryData(todosQueryOptions),
+    queryClient.query(todosQueryOptions),
   component: TodoPage,
 })
 
