@@ -28,7 +28,7 @@ function RootLayout() {
             className="flex items-center gap-2 font-semibold tracking-tight"
           >
             <Layers className="size-4" />
-            <span>nestjs-sandbox-fe</span>
+            <span>Todo</span>
           </Link>
 
           <div className="flex items-center gap-2">
@@ -43,12 +43,7 @@ function RootLayout() {
               >
                 Home
               </Link>
-              <Link
-                to="/about"
-                className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground [&.active]:bg-muted [&.active]:font-medium [&.active]:text-foreground"
-              >
-                About
-              </Link>
+             
             </nav>
             <ThemeToggle />
           </div>
