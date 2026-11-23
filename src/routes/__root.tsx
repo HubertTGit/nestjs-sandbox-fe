@@ -43,7 +43,12 @@ function RootLayout() {
               >
                 Home
               </Link>
-             
+              <Link
+                to="/todo"
+                className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground [&.active]:bg-muted [&.active]:font-medium [&.active]:text-foreground"
+              >
+                Todo
+              </Link>
             </nav>
             <ThemeToggle />
           </div>
