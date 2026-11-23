@@ -1,20 +1,71 @@
 steps:
-  - name: "gcr.io/cloud-builders/docker"
+  - id: "fetch-cloud-run-env"
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+    entrypoint: "bash"
     args:
-      - "build"
-      - "--no-cache"
-      - "-t"
-      - "europe-west1-docker.pkg.dev/ai-sandbox-509717/cloud-run-source-deploy/nestjs-sandbox-fe/nestjs-sandbox-fe:$COMMIT_SHA"
-      - "."
-      - "-f"
-      - "Dockerfile"
-      - "--build-arg"
-      - "API_URL=$_API_URL"
-  - name: "gcr.io/cloud-builders/docker"
+      - "-c"
+      - |
+        set -euo pipefail
+        gcloud run services describe nestjs-sandbox-fe \
+          --region=europe-west1 \
+          --format=json | python3 -c '
+        import json, subprocess, sys
+
+        service = json.load(sys.stdin)
+        containers = service.get("spec", {}).get("template", {}).get("spec", {}).get("containers", [])
+        envs = {e.get("name"): e for e in (containers[0].get("env", []) if containers else []) if e.get("name")}
+
+        for var_name in ("API_URL", "VITE_GOOGLE_CLIENT_ID"):
+            entry = envs.get(var_name)
+            if not entry:
+                sys.exit(f"ERROR: {var_name} is not set on Cloud Run service nestjs-sandbox-fe")
+
+            value = (entry.get("value") or "").strip()
+            if not value:
+                secret_ref = entry.get("valueFrom", {}).get("secretKeyRef", {})
+                secret_name = secret_ref.get("name")
+                secret_version = secret_ref.get("key", "latest")
+                if secret_name:
+                    value = subprocess.check_output(
+                        ["gcloud", "secrets", "versions", "access", secret_version, f"--secret={secret_name}"],
+                        text=True,
+                    ).strip()
+
+            if not value:
+                sys.exit(f"ERROR: {var_name} on Cloud Run service nestjs-sandbox-fe is empty")
+
+            with open(f"/build-env/{var_name}", "w", encoding="utf-8") as f:
+                f.write(value)
+        '
+    volumes:
+      - name: "build-env"
+        path: "/build-env"
+  - id: "build-image"
+    name: "gcr.io/cloud-builders/docker"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        set -euo pipefail
+        API_URL="$$(cat /build-env/API_URL)"
+        VITE_GOOGLE_CLIENT_ID="$$(cat /build-env/VITE_GOOGLE_CLIENT_ID)"
+        docker build \
+          --no-cache \
+          -t "europe-west1-docker.pkg.dev/ai-sandbox-509717/cloud-run-source-deploy/nestjs-sandbox-fe/nestjs-sandbox-fe:$COMMIT_SHA" \
+          -f Dockerfile \
+          --build-arg "API_URL=$$API_URL" \
+          --build-arg "VITE_GOOGLE_CLIENT_ID=$$VITE_GOOGLE_CLIENT_ID" \
+          .
+    volumes:
+      - name: "build-env"
+        path: "/build-env"
+  - id: "push-image"
+    name: "gcr.io/cloud-builders/docker"
     args:
       - "push"
       - "europe-west1-docker.pkg.dev/ai-sandbox-509717/cloud-run-source-deploy/nestjs-sandbox-fe/nestjs-sandbox-fe:$COMMIT_SHA"
-  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+  - id: "deploy-cloud-run"
+    name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
     entrypoint: "gcloud"
     args:
       - "run"
@@ -25,5 +76,3 @@ steps:
       - "europe-west1-docker.pkg.dev/ai-sandbox-509717/cloud-run-source-deploy/nestjs-sandbox-fe/nestjs-sandbox-fe:$COMMIT_SHA"
       - "--region"
       - "europe-west1"
-substitutions:
-  _API_URL: "https://nestjs-sandbox-975532408780.europe-west1.run.app" # Set your default value or define it in the Console Trigger
