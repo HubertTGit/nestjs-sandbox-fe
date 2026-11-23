@@ -1,10 +1,12 @@
 steps:
-  - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build', 
-      '--no-cache', 
-      '--build-arg', 'API_URL=https://nestjs-sandbox-975532408780.europe-west1.run.app', 
-      '-t', 'europe-west1-docker.pkg.dev/ai-sandbox-509717/cloud-run-source-deploy/nestjs-sandbox-fe/nestjs-sandbox-fe:$COMMIT_SHA', 
-      '.', 
-      '-f', 'Dockerfile'
-    ]
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "--no-cache"
+      - "-t"
+      - "europe-west1-docker.pkg.dev/ai-sandbox-509717/cloud-run-source-deploy/nestjs-sandbox-fe/nestjs-sandbox-fe:$COMMIT_SHA"
+      - "."
+      - "-f"
+      - "Dockerfile"
+      - "--build-arg"
+      - "API_URL=$_API_URL" # Pass the variable here
