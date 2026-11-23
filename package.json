@@ -11,7 +11,11 @@
     "check": "biome check",
     "check:fix": "biome check --write",
     "preview": "vite preview",
-    "api:types": "set -a && . ./.env && set +a && openapi-typescript \"${API_URL%/}/docs-json\" -o src/api/schema.d.ts"
+    "api:types": "set -a && . ./.env && set +a && openapi-typescript \"${API_URL%/}/docs-json\" -o src/api/schema.d.ts",
+    "podman:build": "podman compose build",
+    "podman:up": "podman compose up -d",
+    "podman:down": "podman compose down",
+    "podman:logs": "podman compose logs -f"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

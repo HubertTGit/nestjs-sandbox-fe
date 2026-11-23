@@ -206,7 +206,7 @@ export function TodoItem({
         <Label
           htmlFor={checkboxId}
           className={cn(
-            'min-w-0 flex-1 cursor-pointer py-1 font-normal leading-snug break-words',
+            'min-w-0 flex-1 cursor-pointer py-1 font-normal leading-snug wrap-break-words',
             todo.isCompleted && 'text-muted-foreground line-through',
           )}
         >
