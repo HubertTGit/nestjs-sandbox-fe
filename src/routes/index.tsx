@@ -1,15 +1,12 @@
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query'
-import { createFileRoute, Link, useRouter } from '@tanstack/react-router'
-import { ArrowRight, CheckCircle2, Lock, LogOut } from 'lucide-react'
-import { authMeQueryOptions, logout } from '@/api/auth'
+import { createFileRoute, redirect, useRouter } from '@tanstack/react-router'
+import { Lock } from 'lucide-react'
+import { authMeQueryOptions } from '@/api/auth'
 import { GoogleSignInButton } from '@/components/google-sign-in-button'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
@@ -33,26 +30,31 @@ export const Route = createFileRoute('/')({
   validateSearch: (search: Record<string, unknown>): HomeSearch => ({
     redirect: sanitizeRedirect(search.redirect),
   }),
-  loader: ({ context: { queryClient } }) =>
-    queryClient.ensureQueryData(authMeQueryOptions),
+  beforeLoad: async ({ context: { queryClient }, search }) => {
+    const user = await queryClient.ensureQueryData(authMeQueryOptions)
+    if (user) {
+      if (search.redirect && search.redirect !== '/') {
+        throw redirect({
+          href: search.redirect,
+          replace: true,
+        })
+      }
+      throw redirect({
+        to: '/todo',
+        replace: true,
+      })
+    }
+  },
   component: HomePage,
 })
 
 function HomePage() {
   const router = useRouter()
   const { redirect: redirectTo } = Route.useSearch()
-  const { data: user } = useSuspenseQuery(authMeQueryOptions)
-
-  const logoutMutation = useMutation({
-    mutationFn: logout,
-    onSettled: () => {
-      void router.invalidate()
-    },
-  })
 
   return (
-    <div className="space-y-8">
-      <div className="space-y-2">
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold tracking-tight">
           Todo Workspace
         </h1>
@@ -63,86 +65,43 @@ function HomePage() {
         </p>
       </div>
 
-      {user ? (
-        <Card className="max-w-lg">
-          <CardHeader>
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle>Authenticated session</CardTitle>
-              <Badge variant="secondary" className="gap-1">
-                <CheckCircle2 className="size-3.5" />
-                Signed in
-              </Badge>
-            </div>
-            <CardDescription>
-              Your Bearer access token is attached automatically to all Todo API
-              requests.
-            </CardDescription>
-          </CardHeader>
+      <Card className="max-w-lg">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle>Sign in with Google</CardTitle>
+            <Badge variant="outline" className="gap-1">
+              <Lock className="size-3.5" aria-hidden="true" />
+              Protected
+            </Badge>
+          </div>
+          <CardDescription>
+            Authentication is required before you can enter the Todo route or
+            create, update, and delete todos.
+          </CardDescription>
+        </CardHeader>
 
-          <CardContent className="space-y-1">
-            {user.name ? (
-              <p className="font-medium text-foreground">{user.name}</p>
-            ) : null}
-            <p className="text-sm text-muted-foreground">{user.email}</p>
-          </CardContent>
-
-          <CardFooter className="justify-between gap-3">
-            <Button nativeButton={false} render={<Link to="/todo" />}>
-              <span>Open Todos</span>
-              <ArrowRight />
-            </Button>
-
-            <Button
-              variant="outline"
-              disabled={logoutMutation.isPending}
-              onClick={() => {
-                logoutMutation.mutate()
-              }}
+        <CardContent className="flex flex-col gap-4">
+          {redirectTo ? (
+            <div
+              role="status"
+              className="rounded-lg border border-border bg-muted/50 px-3.5 py-2.5 text-sm text-muted-foreground"
             >
-              <LogOut />
-              <span>
-                {logoutMutation.isPending ? 'Signing out…' : 'Sign out'}
-              </span>
-            </Button>
-          </CardFooter>
-        </Card>
-      ) : (
-        <Card className="max-w-lg">
-          <CardHeader>
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle>Sign in with Google</CardTitle>
-              <Badge variant="outline" className="gap-1">
-                <Lock className="size-3.5" />
-                Protected
-              </Badge>
+              Please sign in to access{' '}
+              <code className="font-mono text-foreground">{redirectTo}</code>.
             </div>
-            <CardDescription>
-              Authentication is required before you can enter the Todo route or
-              create, update, and delete todos.
-            </CardDescription>
-          </CardHeader>
+          ) : null}
 
-          <CardContent className="space-y-4">
-            {redirectTo ? (
-              <div
-                role="status"
-                className="rounded-lg border border-border bg-muted/50 px-3.5 py-2.5 text-sm text-muted-foreground"
-              >
-                Please sign in to access{' '}
-                <code className="font-mono text-foreground">{redirectTo}</code>.
-              </div>
-            ) : null}
-
-            <GoogleSignInButton
-              onSuccess={() => {
-                if (redirectTo) {
-                  router.history.push(redirectTo)
-                }
-              }}
-            />
-          </CardContent>
-        </Card>
-      )}
+          <GoogleSignInButton
+            onSuccess={() => {
+              if (redirectTo && redirectTo !== '/') {
+                router.history.replace(redirectTo)
+              } else {
+                void router.navigate({ to: '/todo', replace: true })
+              }
+            }}
+          />
+        </CardContent>
+      </Card>
     </div>
   )
 }

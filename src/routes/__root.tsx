@@ -27,7 +27,8 @@ function RootLayout() {
 
   const logoutMutation = useMutation({
     mutationFn: logout,
-    onSettled: () => {
+    onSettled: async () => {
+      await router.navigate({ to: '/', replace: true })
       void router.invalidate()
     },
   })
@@ -37,7 +38,7 @@ function RootLayout() {
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-6">
           <Link
-            to="/"
+            to={user ? '/todo' : '/'}
             className="flex items-center gap-2 font-semibold tracking-tight"
           >
             <Layers className="size-4" />
@@ -49,13 +50,6 @@ function RootLayout() {
               aria-label="Primary"
               className="flex items-center gap-1 text-sm"
             >
-              <Link
-                to="/"
-                activeOptions={{ exact: true }}
-                className="rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground [&.active]:bg-muted [&.active]:font-medium [&.active]:text-foreground"
-              >
-                Home
-              </Link>
               <Link
                 to="/todo"
                 className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-muted-foreground transition-colors hover:text-foreground [&.active]:bg-muted [&.active]:font-medium [&.active]:text-foreground"
@@ -101,6 +95,8 @@ function RootLayout() {
 }
 
 function NotFound() {
+  const { data: user } = useQuery(authMeQueryOptions)
+
   return (
     <div className="flex flex-col items-start gap-4 py-12">
       <h1 className="text-2xl font-semibold tracking-tight">Page not found</h1>
@@ -108,10 +104,10 @@ function NotFound() {
         The route you requested does not exist in this SPA.
       </p>
       <Link
-        to="/"
+        to={user ? '/todo' : '/'}
         className="text-sm font-medium text-primary underline underline-offset-4"
       >
-        Return home
+        {user ? 'Return to Todo' : 'Return to sign in'}
       </Link>
     </div>
   )
