@@ -60,8 +60,8 @@ function HomePage() {
         </h1>
         <p className="max-w-2xl text-muted-foreground">
           Sign in with your Google account to access and manage your todos.
-          Short-lived access tokens are kept strictly in memory and rotated
-          automatically via HttpOnly cookies.
+          Short-lived access tokens are kept in memory and refreshed
+          automatically using rotating refresh tokens.
         </p>
       </div>
 

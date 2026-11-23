@@ -3,8 +3,10 @@ import { queryOptions } from '@tanstack/react-query'
 import {
   API_BASE_URL,
   getAccessToken,
+  getRefreshToken,
   refreshAccessToken,
   setAccessToken,
+  setRefreshToken,
 } from '@/api/auth-token'
 import { api } from '@/api/client'
 import type { components } from '@/api/schema'
@@ -31,7 +33,7 @@ function normalizeAuthUser(
 
 /**
  * Exchange a Google OIDC id_token (from <GoogleLogin /> credentialResponse.credential)
- * for an in-memory accessToken and an HttpOnly refresh_token cookie.
+ * for an in-memory accessToken and a rotating refreshToken via JSON body transport.
  */
 export async function loginWithGoogleIdToken(
   idToken: string,
@@ -39,7 +41,7 @@ export async function loginWithGoogleIdToken(
   const { data, error, response } = await api.POST('/auth/google', {
     params: {
       header: {
-        'X-Auth-Transport': 'cookie',
+        'X-Auth-Transport': 'body',
       },
     },
     body: { idToken },
@@ -50,6 +52,7 @@ export async function loginWithGoogleIdToken(
   }
 
   setAccessToken(data.accessToken, data.expiresIn)
+  setRefreshToken(data.refreshToken ?? null)
   const user = normalizeAuthUser(data.user)
   queryClient.setQueryData<AuthUser | null>(authMeQueryKey, user)
   return user
@@ -57,7 +60,7 @@ export async function loginWithGoogleIdToken(
 
 /**
  * Fetch the currently authenticated user via GET /auth/me (Bearer).
- * Attempts one silent cookie refresh on cold page reload before returning null.
+ * Attempts one silent token refresh on cold page reload before returning null.
  */
 export async function fetchCurrentUser(): Promise<AuthUser | null> {
   const token = getAccessToken() ?? (await refreshAccessToken())
@@ -82,23 +85,24 @@ export const authMeQueryOptions = queryOptions({
 
 export function clearAuthCache(): void {
   setAccessToken(null)
+  setRefreshToken(null)
   queryClient.setQueryData<AuthUser | null>(authMeQueryKey, null)
   queryClient.removeQueries({ queryKey: todoKeys.all })
 }
 
 /**
- * Revoke the refresh token family, clear the HttpOnly cookie, and discard in-memory state.
+ * Revoke the refresh token family on the backend and discard local tokens and cached state.
  */
 export async function logout(): Promise<void> {
+  const refreshToken = getRefreshToken()
   try {
     await fetch(`${API_BASE_URL}/auth/logout`, {
       method: 'POST',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
-        'X-Auth-Transport': 'cookie',
+        'X-Auth-Transport': 'body',
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify(refreshToken ? { refreshToken } : {}),
     })
   } finally {
     googleLogout()

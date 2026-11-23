@@ -17,7 +17,6 @@ const requestClones = new WeakMap<Request, Request>()
 
 export const api = createClient<paths>({
   baseUrl: API_BASE_URL,
-  credentials: 'include',
 })
 
 const authMiddleware: Middleware = {
